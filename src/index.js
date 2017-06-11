@@ -41,7 +41,7 @@ module.exports = function withFlux(Base) {
             console.log(Base.name, '- 3. WrappedClass.render', 'initialState', initialState);
         }
 
-        // Do not know if `_state` is safe to use.
+        // I think It is not safe but I don't have any alternative
         initialState.forEach(function(state, index) {
             stores[index]._state = fromJS(state);
         });
