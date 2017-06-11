@@ -1,6 +1,6 @@
 # next-flux-wrapper
 
-Flux wrapper for Next.js
+Flux wrapper for Next.js - [DEMO](https://demo-hwvjthoxim.now.sh)
 
 ## Installation
 
@@ -16,8 +16,6 @@ npm install next-flux-wrapper --save
 // stores/app.js
 import {Map} from 'immutable';
 import {ReduceStore} from 'flux/utils';
-import dispatcher from '../base/dispatcher';
-import ACTION_TYPES from '../base/actionTypes';
 
 class App extends ReduceStore {
     getInitialState() {
