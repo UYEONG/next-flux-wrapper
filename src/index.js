@@ -1,105 +1,103 @@
 var React = require('react');
-var ReactRedux = require('react-redux');
-
-var connect = ReactRedux.connect;
-var Provider = ReactRedux.Provider;
-
+var FluxUtils = require('flux/utils');
+var Immutable = require('immutable');
+var createElement = React.createElement;
+var Container = FluxUtils.Container;
+var fromJS = Immutable.fromJS;
+var STORE_KEY = '__NEXT_FLUX_STORE__';
+var SKIP_PROPERTIES = ['initialState', 'initialProps', 'isServer', 'store'];
 var _Promise;
 var _debug = false;
-var skipMerge = ['initialState', 'initialProps', 'isServer', 'store'];
-var storeKey = '__NEXT_REDUX_STORE__';
 
-function initStore(makeStore, req, initialState) {
-
+function initStore(getStores, req) {
     // Always make a new store if server
     if (!!req && typeof window === 'undefined') {
-        if (!req._store) {
-            req._store = makeStore(initialState);
+        if (!req._stores) {
+            req._stores = getStores();
         }
-        return req._store;
+        return req._stores;
     }
 
     // Memoize store if client
-    if (!window[storeKey]) {
-        window[storeKey] = makeStore(initialState);
+    if (!window[STORE_KEY]) {
+        window[STORE_KEY] = getStores();
     }
 
-    return window[storeKey];
-
+    return window[STORE_KEY];
 }
 
-module.exports = function(createStore) {
+module.exports = function withFlux(Base) {
+    var ContainerClass = Container.create(Base);
 
-    var connectArgs = [].slice.call(arguments).slice(1);
+    function WrapperClass(props) {
+        props = props || {};
 
-    return function(Cmp) {
+        var initialProps = props.initialProps || {};
+        var initialState = props.initialState || [];
+        var stores = initStore(Base.getStores, {});
+        var mergedProps = {};
 
-        // Since provide should always be after connect we connect here
-        var ConnectedCmp = (connect.apply(null, connectArgs))(Cmp);
-
-        function WrappedCmp(props) {
-
-            props = props || {};
-
-            var initialState = props.initialState || {};
-            var initialProps = props.initialProps || {};
-            var hasStore = props.store && props.store.dispatch && props.store.getState;
-            var store = hasStore
-                ? props.store
-                : initStore(createStore, {}, initialState); // client case, no store but has initialState
-
-            if (_debug) console.log(Cmp.name, '- 4. WrappedCmp.render', (hasStore ? 'picked up existing one,' : 'created new store with'), 'initialState', initialState);
-
-            // Fix for _document
-            var mergedProps = {};
-            Object.keys(props).forEach(function(p) { if (!~skipMerge.indexOf(p)) mergedProps[p] = props[p]; });
-            Object.keys(initialProps || {}).forEach(function(p) { mergedProps[p] = initialProps[p]; });
-
-            return React.createElement( //FIXME This will create double Provider for _document case
-                Provider,
-                {store: store},
-                React.createElement(ConnectedCmp, mergedProps)
-            );
-
+        if (_debug) {
+            console.log(Base.name, '- 3. WrappedClass.render', 'initialState', initialState);
         }
 
-        WrappedCmp.getInitialProps = function(ctx) {
+        // Do not know if `_state` is safe to use.
+        initialState.forEach(function(state, index) {
+            stores[index]._state = fromJS(state);
+        });
 
-            return new _Promise(function(res) {
+        if (_debug) {
+            console.log(Base.name, '- 4. WrappedClass.render', 'unserialize state', stores);
+        }
 
-                ctx = ctx || {};
+        // Filter unnecessary properties at the client level
+        Object.keys(props).forEach(function(prop) {
+            if (SKIP_PROPERTIES.indexOf(prop) === -1) {
+                mergedProps[prop] = props[prop];
+            }
+        });
 
-                if (_debug) console.log(Cmp.name, '- 1. WrappedCmp.getInitialProps wrapper', (ctx.req && ctx.req._store ? 'takes the req store' : 'creates the store'));
+        Object.keys(initialProps).forEach(function(prop) {
+            mergedProps[prop] = initialProps[prop]
+        });
 
-                ctx.isServer = !!ctx.req;
-                ctx.store = initStore(createStore, ctx.req);
+        return createElement(ContainerClass, mergedProps);
+    }
 
-                res(_Promise.all([
-                    ctx.isServer,
-                    ctx.store,
-                    ctx.req,
-                    Cmp.getInitialProps ? Cmp.getInitialProps.call(Cmp, ctx) : {}
-                ]));
+    WrapperClass.getInitialProps = function(context) {
+        return new _Promise(function(resolve) {
+            context = context || {};
+            context.isServer = !!context.req;
+            context.stores = initStore(Base.getStores, context.req);
 
-            }).then(function(arr) {
+            if (_debug) {
+                console.log(Base.name, '- 1. WrappedClass.getInitialProps create stores', context.stores);
+            }
 
-                if (_debug) console.log(Cmp.name, '- 3. WrappedCmp.getInitialProps has store state', arr[1].getState());
-
-                return {
-                    isServer: arr[0],
-                    store: arr[1],
-                    initialState: arr[1].getState(),
-                    initialProps: arr[3]
-                };
-
+            resolve(Promise.all([
+                context.isServer,
+                context.stores,
+                context.req,
+                Base.getInitialProps ? Base.getInitialProps.call(Base, context) : {}
+            ]));
+        }).then(function(result) {
+            var states = result[1].map(function(s) {
+                return s.getState().toJS();
             });
 
-        };
+            if (_debug) {
+                console.log(Base.name, '- 2. WrappedClass.getInitialProps serialize states', states);
+            }
 
-        return WrappedCmp;
-
+            return {
+                isServer: result[0],
+                initialState: states,
+                initialProps: result[3]
+            };
+        });
     };
 
+    return WrapperClass;
 };
 
 module.exports.setPromise = function(Promise) {

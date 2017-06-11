@@ -1,46 +1,6 @@
-# next-flux-wrapper
-
-Flux wrapper for Next.js
-
-## Installation
-
-### npm
-
-```bash
-npm install next-flux-wrapper --save
-```
-
-### Usage
-
-```js
-// stores/app.js
-import {Map} from 'immutable';
-import {ReduceStore} from 'flux/utils';
-import dispatcher from '../base/dispatcher';
-import ACTION_TYPES from '../base/actionTypes';
-
-class App extends ReduceStore {
-    getInitialState() {
-        return Map({
-            locale: 'unknown',
-            token:  ''
-        });
-    }
-
-    reduce(state, action) {
-        switch (action.type) {
-            case ACTION_TYPES.INITIAL:
-                state = state.set('locale', action.locale);
-                state = state.set('token',  action.token);
-                return state;
-            default:
-                return state;
-        }
-    }
-}
-
-// pages/index.js
 import {Component} from 'react';
+import Link from 'next/link';
+import {dispatch} from '../base/dispatcher';
 import ACTION_TYPES from '../base/actionTypes';
 import app from '../stores/app';
 import withFlux from 'next-flux-wrapper';
@@ -57,7 +17,8 @@ class IndexPage extends Component {
 
         return {
             name: 'Hello Next.js! - Index',
-            description: 'Flux wrapper for Next.js'
+            description: 'Flux wrapper for Next.js',
+            code: (res && res.statusCode || 'unknown')
         };
     }
 
@@ -80,19 +41,22 @@ class IndexPage extends Component {
                     <p>{this.props.description}</p>
                 </header>
                 <dl>
+                    <dt>Status Code</dt>
+                    <dd>{this.props.code}</dd>
                     <dt>Locale</dt>
                     <dd>{this.state.locale}</dd>
                     <dt>Token</dt>
                     <dd>{this.state.token}</dd>
                 </dl>
+                <hr/>
+                <Link href="/about">
+                    <a>Go to about page.</a>
+                </Link>
             </div>
         );
     }
 }
 
+withFlux.setDebug(true);
+
 export default withFlux(IndexPage);
-```
-
-## License
-
-MIT
