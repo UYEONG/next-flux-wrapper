@@ -8,9 +8,17 @@
     "immutable": "3.8.1",
     "react": "15.5.4"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "babel-jest": "20.0.3",
+    "babel-plugin-transform-async-to-generator": "6.24.1",
+    "babel-preset-es2015": "6.24.1",
+    "babel-preset-react": "6.24.1",
+    "enzyme": "2.8.2",
+    "jest": "20.0.4",
+    "react-addons-test-utils": "15.5.1"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -21,5 +29,18 @@
   "bugs": {
     "url": "https://github.com/UYEONG/next-flux-wrapper/issues"
   },
-  "homepage": "https://github.com/UYEONG/next-flux-wrapper#readme"
+  "homepage": "https://github.com/UYEONG/next-flux-wrapper#readme",
+  "jest": {
+    "testRegex": "(/src/.*\\.spec.js)$",
+    "collectCoverage": true
+  },
+  "babel": {
+    "presets": [
+      "es2015",
+      "react"
+    ],
+    "plugins": [
+      "transform-async-to-generator"
+    ]
+  }
 }
