@@ -1,21 +1,33 @@
 var React = require('react');
 var FluxUtils = require('flux/utils');
+var Dispatcher = require('flux').Dispatcher;
 var Immutable = require('immutable');
 var createElement = React.createElement;
 var Container = FluxUtils.Container;
 var fromJS = Immutable.fromJS;
 var STORE_KEY = '__NEXT_FLUX_STORE__';
-var SKIP_PROPERTIES = ['initialState', 'initialProps', 'isServer', 'store'];
+var SKIP_PROPERTIES = ['initialState', 'initialProps', 'isServer'];
 var _Promise;
 var _debug = false;
+var isBrowser = typeof window !== 'undefined';
 
-function initStore(getStores, req) {
+function initStore(getStores, context) {
+    var req = context.req;
+    var isServer = context.isServer;
+    var dispatcher;
     // Always make a new store if server
-    if (!!req && typeof window === 'undefined') {
+    if (isServer) {
         if (!req._stores) {
-            req._stores = getStores();
+            dispatcher = new Dispatcher();
+            req._stores = getStores().map(function(store) {
+                return new store.constructor(dispatcher);
+            });
         }
         return req._stores;
+    }
+
+    if (!isBrowser) {
+        return null;
     }
 
     // Memoize store if client
@@ -27,14 +39,14 @@ function initStore(getStores, req) {
 }
 
 module.exports = function withFlux(Base) {
+    var getStores = Base.getStores.bind(Base);
     var ContainerClass = Container.create(Base);
 
     function WrapperClass(props) {
         props = props || {};
-
         var initialProps = props.initialProps || {};
         var initialState = props.initialState || [];
-        var stores = initStore(Base.getStores, {});
+        var stores = Base.getStores();
         var mergedProps = {};
 
         if (_debug) {
@@ -67,22 +79,23 @@ module.exports = function withFlux(Base) {
     WrapperClass.getInitialProps = function(context) {
         return new _Promise(function(resolve) {
             context = context || {};
-            context.isServer = !!context.req;
-            context.stores = initStore(Base.getStores, context.req);
+            context.isServer = !!context.req && !isBrowser;
+            context.stores = (Base.getStores = function() {return initStore(getStores, context)})();
+            context.dispatch = context.stores[0].__dispatcher.dispatch.bind(context.stores[0].__dispatcher);
 
             if (_debug) {
                 console.log(Base.name, '- 1. WrappedClass.getInitialProps create stores', context.stores);
             }
 
-            resolve(Promise.all([
+            resolve(_Promise.all([
                 context.isServer,
                 context.stores,
                 context.req,
                 Base.getInitialProps ? Base.getInitialProps.call(Base, context) : {}
             ]));
         }).then(function(result) {
-            var states = result[1].map(function(s) {
-                return s.getState().toJS();
+            var states = result[1].map(function(store) {
+                return store.getState();
             });
 
             if (_debug) {
