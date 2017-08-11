@@ -5,7 +5,6 @@
   "main": "src/index.js",
   "dependencies": {
     "flux": "3.1.3",
-    "immutable": "3.8.1",
     "react": "15.6.1",
     "transit-immutable-js": "0.7.0",
     "transit-js": "0.8.846"
@@ -16,6 +15,7 @@
     "babel-preset-es2015": "6.24.1",
     "babel-preset-react": "6.24.1",
     "enzyme": "2.9.1",
+    "immutable": "^3.8.1",
     "jest": "20.0.4",
     "react-addons-test-utils": "15.6.0",
     "react-dom": "^15.6.1"

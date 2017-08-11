@@ -1,11 +1,9 @@
 var React = require('react');
 var FluxUtils = require('flux/utils');
 var Dispatcher = require('flux').Dispatcher;
-var Immutable = require('immutable');
 var transit = require('transit-immutable-js');
 var createElement = React.createElement;
 var Container = FluxUtils.Container;
-var fromJS = Immutable.fromJS;
 var STORE_KEY = '__NEXT_FLUX_STORE__';
 var SKIP_PROPERTIES = ['initialState', 'initialProps', 'isServer'];
 var _Promise;
