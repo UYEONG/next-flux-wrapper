@@ -1,5 +1,6 @@
 import React from 'react';
 import {Map} from 'immutable';
+import transit from 'transit-immutable-js';
 import {Dispatcher} from 'flux';
 import {ReduceStore} from 'flux/utils';
 import {mount} from 'enzyme';
@@ -99,7 +100,7 @@ test('simple store integration', async () => {
     const DummyPage = createDummyPage(store);
     const {props, rendered} = (await next(withFlux(DummyPage)));
 
-    expect(props.initialState[0].foo).toBe('state-foo-value');
+    expect(transit.fromJSON(props.initialState[0]).get('foo')).toBe('state-foo-value');
     expect(props.initialProps.bar).toBe('props-bar-value');
     expect(rendered.find('dd').get(0).textContent).toEqual('state-foo-value');
     expect(rendered.find('dd').get(1).textContent).toEqual('props-bar-value');
@@ -110,7 +111,7 @@ test('async store integration', async () => {
     const DummyPage = createDummyPage(store, true);
     const {props, rendered} = (await next(withFlux(DummyPage)));
 
-    expect(props.initialState[0].foo).toBe('state-foo-value');
+    expect(transit.fromJSON(props.initialState[0]).get('foo')).toBe('state-foo-value');
     expect(props.initialProps.bar).toBe('props-bar-value');
     expect(rendered.find('dd').get(0).textContent).toEqual('state-foo-value');
     expect(rendered.find('dd').get(1).textContent).toEqual('props-bar-value');
