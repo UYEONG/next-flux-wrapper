@@ -2,6 +2,7 @@ var React = require('react');
 var FluxUtils = require('flux/utils');
 var Dispatcher = require('flux').Dispatcher;
 var Immutable = require('immutable');
+var transit = require('transit-immutable-js');
 var createElement = React.createElement;
 var Container = FluxUtils.Container;
 var fromJS = Immutable.fromJS;
@@ -55,7 +56,7 @@ module.exports = function withFlux(Base) {
 
         // I think It is not safe but I don't have any alternative
         initialState.forEach(function(state, index) {
-            stores[index]._state = fromJS(state);
+            stores[index]._state = transit.fromJSON(state);
         });
 
         if (_debug) {
@@ -95,7 +96,7 @@ module.exports = function withFlux(Base) {
             ]));
         }).then(function(result) {
             var states = result[1].map(function(store) {
-                return store.getState();
+                return transit.toJSON(store.getState());
             });
 
             if (_debug) {
