@@ -1,12 +1,11 @@
-import {Component} from 'react';
+import React, {Component} from 'react';
 import Link from 'next/link';
-import {dispatch} from '../base/dispatcher';
 import ACTION_TYPES from '../base/actionTypes';
 import app from '../stores/app';
 import withFlux from 'next-flux-wrapper';
 
 class IndexPage extends Component {
-    static getInitialProps({isServer, res}) {
+    static getInitialProps({isServer, dispatch, res}) {
         if (isServer) {
             dispatch({
                 type: ACTION_TYPES.INITIAL,
