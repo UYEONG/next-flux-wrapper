@@ -16,6 +16,8 @@ npm install next-flux-wrapper --save
 // stores/app.js
 import {Map} from 'immutable';
 import {ReduceStore} from 'flux/utils';
+import dispatcher from '../base/dispatcher';
+import ACTION_TYPES from '../base/actionTypes';
 
 class App extends ReduceStore {
     getInitialState() {
@@ -38,14 +40,17 @@ class App extends ReduceStore {
     }
 }
 
+export default new App(dispatcher);
+
 // pages/index.js
-import {Component} from 'react';
+import React, {Component} from 'react';
+import Link from 'next/link';
 import ACTION_TYPES from '../base/actionTypes';
 import app from '../stores/app';
 import withFlux from 'next-flux-wrapper';
 
 class IndexPage extends Component {
-    static getInitialProps({isServer, res}) {
+    static getInitialProps({isServer, dispatch, res}) {
         if (isServer) {
             dispatch({
                 type: ACTION_TYPES.INITIAL,
