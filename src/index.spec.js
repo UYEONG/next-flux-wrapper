@@ -102,8 +102,8 @@ test('simple store integration', async () => {
 
     expect(transit.fromJSON(props.initialState[0]).get('foo')).toBe('state-foo-value');
     expect(props.initialProps.bar).toBe('props-bar-value');
-    expect(rendered.find('dd').get(0).textContent).toEqual('state-foo-value');
-    expect(rendered.find('dd').get(1).textContent).toEqual('props-bar-value');
+    expect(rendered.find('dd').at(0).text()).toEqual('state-foo-value');
+    expect(rendered.find('dd').at(1).text()).toEqual('props-bar-value');
 });
 
 test('async store integration', async () => {
@@ -113,8 +113,8 @@ test('async store integration', async () => {
 
     expect(transit.fromJSON(props.initialState[0]).get('foo')).toBe('state-foo-value');
     expect(props.initialProps.bar).toBe('props-bar-value');
-    expect(rendered.find('dd').get(0).textContent).toEqual('state-foo-value');
-    expect(rendered.find('dd').get(1).textContent).toEqual('props-bar-value');
+    expect(rendered.find('dd').at(0).text()).toEqual('state-foo-value');
+    expect(rendered.find('dd').at(1).text()).toEqual('props-bar-value');
 });
 
 test('simple props', async () => {
