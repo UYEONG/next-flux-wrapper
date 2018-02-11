@@ -1,13 +1,14 @@
 var React = require('react');
 var FluxUtils = require('flux/utils');
 var Dispatcher = require('flux').Dispatcher;
-var transit = require('transit-immutable-js');
 var createElement = React.createElement;
 var Container = FluxUtils.Container;
 var STORE_KEY = '__NEXT_FLUX_STORE__';
 var SKIP_PROPERTIES = ['initialState', 'initialProps', 'isServer'];
 var _Promise;
 var _debug = false;
+var _useImmutable = true;
+var transit = null;
 var isBrowser = typeof window !== 'undefined';
 
 function initStore(getStores, context) {
@@ -18,7 +19,7 @@ function initStore(getStores, context) {
     if (isServer) {
         if (!req._stores) {
             dispatcher = new Dispatcher();
-            req._stores = getStores().map(function(store) {
+            req._stores = getStores().map(function (store) {
                 return new store.constructor(dispatcher);
             });
         }
@@ -41,6 +42,10 @@ module.exports = function withFlux(Base) {
     var getStores = Base.getStores.bind(Base);
     var ContainerClass = Container.create(Base);
 
+    if (_useImmutable && !transit) {
+        transit = require('transit-immutable-js');
+    }
+
     function WrapperClass(props) {
         props = props || {};
         var initialProps = props.initialProps || {};
@@ -53,8 +58,8 @@ module.exports = function withFlux(Base) {
         }
 
         // I think It is not safe but I don't have any alternative
-        initialState.forEach(function(state, index) {
-            stores[index]._state = transit.fromJSON(state);
+        initialState.forEach(function (state, index) {
+            stores[index]._state = _useImmutable ? transit.fromJSON(state) : state;
         });
 
         if (_debug) {
@@ -62,24 +67,26 @@ module.exports = function withFlux(Base) {
         }
 
         // Filter unnecessary properties at the client level
-        Object.keys(props).forEach(function(prop) {
+        Object.keys(props).forEach(function (prop) {
             if (SKIP_PROPERTIES.indexOf(prop) === -1) {
                 mergedProps[prop] = props[prop];
             }
         });
 
-        Object.keys(initialProps).forEach(function(prop) {
+        Object.keys(initialProps).forEach(function (prop) {
             mergedProps[prop] = initialProps[prop]
         });
 
         return createElement(ContainerClass, mergedProps);
     }
 
-    WrapperClass.getInitialProps = function(context) {
-        return new _Promise(function(resolve) {
+    WrapperClass.getInitialProps = function (context) {
+        return new _Promise(function (resolve) {
             context = context || {};
             context.isServer = !!context.req && !isBrowser;
-            context.stores = (Base.getStores = function() {return initStore(getStores, context)})();
+            context.stores = (Base.getStores = function () {
+                return initStore(getStores, context)
+            })();
             context.dispatch = context.stores[0].__dispatcher.dispatch.bind(context.stores[0].__dispatcher);
 
             if (_debug) {
@@ -92,9 +99,10 @@ module.exports = function withFlux(Base) {
                 context.req,
                 Base.getInitialProps ? Base.getInitialProps.call(Base, context) : {}
             ]));
-        }).then(function(result) {
-            var states = result[1].map(function(store) {
-                return transit.toJSON(store.getState());
+        }).then(function (result) {
+            var states = result[1].map(function (store) {
+                var state = store.getState();
+                return _useImmutable ? transit.toJSON(state) : state;
             });
 
             if (_debug) {
@@ -112,12 +120,16 @@ module.exports = function withFlux(Base) {
     return WrapperClass;
 };
 
-module.exports.setPromise = function(Promise) {
+module.exports.setPromise = function (Promise) {
     _Promise = Promise;
 };
 
-module.exports.setDebug = function(debug) {
+module.exports.setDebug = function (debug) {
     _debug = debug;
+};
+
+module.exports.useImmutable = function(useImmutable) {
+    _useImmutable = useImmutable;
 };
 
 module.exports.setPromise(Promise);
