@@ -26,6 +26,8 @@ class AboutPage extends Component {
     }
 
     static calculateState() {
+        // Because Node.js creates a new instance.
+        const [app] = AboutPage.getStores();
         return {
             locale: app.getState().get('locale'),
             token: app.getState().get('token')
